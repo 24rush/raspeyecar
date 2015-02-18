@@ -23,14 +23,9 @@ body a{
 	-ms-transition:0.5s all;
 }
 
-@font-face {
-    font-family: Roboto;
-    src: url(../fonts/Roboto-Light.ttf) format('truetype');
-}
-
-@font-face {
-    font-family: RobotoBold;
-    src: url(../fonts/Roboto-Bold.ttf) format('truetype');
+.page-header {
+	margin-left: 20px;
+	margin-top: 20px;
 }
 
 .inline {

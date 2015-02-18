@@ -12,8 +12,13 @@
 </head>
 <body>	
 
+	<div class="page-header">
+	  <h1>Raspberry Pi 3G Controlled RC Car</h1>
+	</div>
+
+
 	<canvas id="controls" style="pointer-events: all; width: 100%; height: 100%;"></canvas>
-	<img id="direction" src="arrow.png" style="width: 35px">
+	<img id="direction" src="arrow.png" style="width: 35px;display:none;">
 
 	<script src="js/lib/jquery.min.js" type="text/javascript"></script>		
 	<script src="js/lib/bootstrap.min.js" type="text/javascript"></script>	
@@ -40,7 +45,7 @@
 			var outerCircleRadius = 100;
 			var innerCircleRadius = 45;
 
-			var center = new Point(wWidth/2, wHeight/2);
+			var center = new Point(wWidth/2, wHeight/4);
 
 			self.animationDuration = 200;
 			self.animationStart = undefined;
