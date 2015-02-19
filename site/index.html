@@ -164,16 +164,18 @@
 			}
 
 			function onCtrlMoved (point) {
-				var outsideStop = Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2) > pow2(innerCircleRadius);
+				var distToCenter = Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2);
+				var outsideStop =  distToCenter > pow2(innerCircleRadius);
 
 				var angle = point.subtract(center).angle;
-				self.point.setAngle(angle);
+				self.point.setAngle(angle);	
 
 				if (outsideStop == false) {
 					setDirection('stop')
 					return;
 				}
-									
+					
+						
 				reportPosition(angle);
 			}
 
