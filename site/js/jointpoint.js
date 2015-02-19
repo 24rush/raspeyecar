@@ -21,7 +21,7 @@ var JointPoint = function(point, options) {
 	if (overlay != undefined) {
 		self.overlay = new Raster(overlay);
 		self.overlay.position = point;
-		self.overlay.scale(0.18);
+		self.overlay.scale(0.28);
 		self.overlay.rotate(270);	
 	}
 
