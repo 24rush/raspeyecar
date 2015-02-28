@@ -1,6 +1,6 @@
 from __future__ import print_function
 import time
-#from pololu_drv8835_rpi import motors, MAX_SPEED
+from pololu_drv8835_rpi import motors, MAX_SPEED
 
 import sys
 import os
@@ -20,7 +20,7 @@ root.setLevel(logging.INFO)
 ch = logging.StreamHandler(sys.stdout)
 root.addHandler(ch)
 
-#SPEED_2V = MAX_SPEED / 3
+SPEED_2V = MAX_SPEED / 3
 
 def log(message):
     #ts = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S.%f')[:-3]
