@@ -1,43 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+	<!DOCTYPE html>
+	<html lang="en">
+	<head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Raspeyecar</title>
-	
-	<meta http-equiv="content-type" content="text/html; charset=UTF-8">		
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">	
-	<link href="css/style.css" rel='stylesheet' type='text/css' />	
-</head>
-<body>	
+
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+	<link href="css/style.css" rel='stylesheet' type='text/css' />
+	</head>
+	<body>
 
 	<div class="page-header">
 		<h1>Raspberry Pi 3G Controlled RC Car</h1>
+		<span id="statusBar" class="label label-warning" style="cursor: default;">Connecting...</span>
 	</div>
 
 
 	<canvas id="controls" style="pointer-events: all; width: 100%; height: 100%;"></canvas>
 	<img id="direction" src="arrow.png" style="width: 35px;display:none;">
 
-	<script src="js/lib/jquery.min.js" type="text/javascript"></script>		
-	<script src="js/lib/bootstrap.min.js" type="text/javascript"></script>	
+	<script src="js/lib/jquery.min.js" type="text/javascript"></script>
+	<script src="js/lib/bootstrap.min.js" type="text/javascript"></script>
 	<script src="js/paper-full.js" type="text/javascript"></script>
 	<script src="js/paper-core.js" type="text/javascript"></script>
 
 	<script src="js/jointpoint.js" type="text/javascript"></script>
 	<script src="js/text.js" type="text/javascript"></script>
 
+	<script src="http://js.pusher.com/2.2/pusher.js"></script>
+
 	<script type="text/javascript">
 	$(document).ready(function() {
-		var self = this;		
+		var self = this;
 
 		var wHeight = 0.95 * $(window).height();
 		var wWidth = $(window).width();
 		var scaled = Math.min(wHeight, wWidth);
 
 		$('#controls').height(wHeight);
-		$('#controls').width(wWidth);	
+		$('#controls').width(wWidth);
 
 		paper.install(window);
 		paper.setup('controls');
@@ -67,7 +70,7 @@
 			if (angle <= 0)
 				return -angle;
 
-			return 360 - angle;				
+			return 360 - angle;
 		}
 
 		var sectorType = 0;
@@ -78,40 +81,40 @@
 			var a = center.x;
 			var b = center.y;
 
-			var cVec = new Point(a + outerCircleRadius, b).subtract(center);	
+			var cVec = new Point(a + outerCircleRadius, b).subtract(center);
 			var to = cVec.clone();
 			var through = cVec.clone();
 
 			cVec.angle = angleFrom;
 			through.angle = (angleTo - angleFrom) / 2 + angleFrom;
-			to.angle = angleTo;		
+			to.angle = angleTo;
 
 			if (through.angle == 0 && cVec.angle == -to.angle && cVec.angle < 0)
-				through.angle = -180;				
+				through.angle = -180;
 
 			var path = new Path();
-			var cap = new Path.Arc(center.add(cVec), center.add(through), center.add(to));						
+			var cap = new Path.Arc(center.add(cVec), center.add(through), center.add(to));
 
 			if (sectorType % 2 == 1) {
 				var fill = '#003366'
-				cap.fillColor = fill;	
+				cap.fillColor = fill;
 
 				path.fillColor = fill;
 				path.strokeColor = fill;
 
-				cap.strokeColor = fill;			
+				cap.strokeColor = fill;
 			} else {
 				var fill = '#336699';
 				cap.fill = fill;
 				path.fillColor = fill;
 			}
 
-			cap.strokeWidth = 0;								
+			cap.strokeWidth = 0;
 			path.strokeWidth = 0;
 
 			path.add(center);
-			path.add(center.add(cVec));	
-			path.add(center.add(to));		
+			path.add(center.add(cVec));
+			path.add(center.add(to));
 
 			var l1 = new Path.Line(center, center.add(cVec));
 			var l2 = new Path.Line(center, center.add(to));
@@ -126,7 +129,7 @@
 		function moveToCenter(event) {
 			if (self.animationEnded == true) {
 				return;
-			}			
+			}
 
 			if (self.animationStart == undefined) {
 				self.animationStart = event.time * 1000;
@@ -145,9 +148,9 @@
 
 			var diff = center.subtract(self.lastPointDrop);
 			diff.length *= progress;
-			var newPos = self.lastPointDrop.add(diff);		
+			var newPos = self.lastPointDrop.add(diff);
 
-			self.point.setPoint(newPos);					
+			self.point.setPoint(newPos);
 		}
 
 		function pow2(x) { return Math.pow(x, 2); }
@@ -168,7 +171,7 @@
 			var outsideStop =  distToCenter > pow2(innerCircleRadius);
 
 			var angle = point.subtract(center).angle;
-			self.point.setAngle(angle);	
+			self.point.setAngle(angle);
 
 			if (outsideStop == false) {
 				setDirection('STOP')
@@ -183,7 +186,7 @@
 		self.lastTimer = undefined;
 		self.repeatTimeout = 1000;
 
-		function repeatLastDirection() {			
+		function repeatLastDirection() {
 			sendMessage(self.lastDirection);
 
 			clearTimeout(self.lastTimer);
@@ -195,16 +198,16 @@
 		}
 
 		function setDirection(direction) {
-			if (direction != self.lastDirection) {				
-				self.lastDirection = direction;			
-				
+			if (direction != self.lastDirection) {
+				self.lastDirection = direction;
+
 				sendMessage(direction);
 
 				if (direction != 'STOP') {
 					clearTimeout(self.lastTimer);
 					self.lastTimer = setTimeout(repeatLastDirection, self.repeatTimeout);
-				}				
-			}				
+				}
+			}
 		}
 
 		function reportPosition(angle) {
@@ -218,7 +221,7 @@
 			var i = self.angles.length - 1;
 			if (angle <= self.angles[0] || angle >= self.angles[i]) {
 				setDirection(self.directions[i]);
-			}	
+			}
 		}
 
 		function restrictMove (point) {
@@ -231,17 +234,17 @@
 				var b = center.y;
 
 				var dP = point.getDistance(center);
-				var sqY = Math.abs(y - b) * outerCircleRadius / dP;			
+				var sqY = Math.abs(y - b) * outerCircleRadius / dP;
 				var yp = y <= b ? b - sqY : b + sqY;
 
-				var sqX = Math.abs(x - a) * outerCircleRadius / dP;				
+				var sqX = Math.abs(x - a) * outerCircleRadius / dP;
 				var xp = x <= a ? a - sqX : a + sqX;
 
 				self.point.setPoint(new Point(xp, yp));
 			}
-			
-			return canMove;				
-		}					
+
+			return canMove;
+		}
 
 		for (var i = 0; i < self.angles.length - 1; i++) {
 			drawSector(self.angles[i], self.angles[i+1]);
@@ -251,7 +254,7 @@
 
 		new Path.Circle({
 			center: center,
-			radius: outerCircleRadius - innerCircleRadius,				
+			radius: outerCircleRadius - innerCircleRadius,
 			strokeColor: '#6A6A5A',
 			fillColor : '#FFCC00',
 			strokeWidth: 1
@@ -264,74 +267,84 @@
 			'overlay' : 'direction',
 			'fillColor' : '#555555',
 			'strokeColor' : '#6A6A5A'
-		};	
+		};
 
 		self.point = new JointPoint(center, options);
 		self.point.onMouseUp(onPointReleased);
-		self.point.onMove(onCtrlMoved);	
+		self.point.onMove(onCtrlMoved);
 
 		var _text = new PointText(center);
-		
+
 		_text.fillColor = 'red';
 		_text.style = {
 			font: 'sans-serif',
 			fontWeight: 'normal',
 			fontSize: 16,
-		};		
+		};
 
 		view.onFrame = function (event) {
 			moveToCenter(event);
 		}
 
+		function setPushStatus(msg, status, tooltip) {
+			$('#statusBar').text(msg);
+			$('#statusBar').removeClass();
+			$('#statusBar').addClass('label');
+
+			if (status == 'error') {
+				$('#statusBar').addClass('label-danger');
+			} else if (status == 'ok') {
+				$('#statusBar').addClass('label-success');
+			}
+
+			if (tooltip != undefined) {
+				$('#statusBar').attr('title', tooltip);
+			}
+		}
 
 		var baseURL = 'http://raspeyecar.appspot.com';
- // var baseURL = 'http://localhost:12080';
 
- function sendMessage(opt_param) {     
- 	var xhr = new XMLHttpRequest();         
- 	xhr.open('POST', baseURL, true);
- 	xhr.setRequestHeader('X-Car-Message', opt_param);
- 	xhr.send();
- };
+		self.pusherInitialized = false;
 
- // function getToken() {
- // 	var xmlHttp = new XMLHttpRequest();
- // 	xmlHttp.open( "GET", baseURL, false );
- // 	xmlHttp.send( null );
- // 	response = xmlHttp.responseText
- // 	response = response.split('\'').join('"')
- // 	response = response.split(': u').join(': ')     
- // 	response = JSON.parse(response);
+		var initPush = function() {
+			Pusher.log = function(message) {
+			  if (window.console && window.console.log) {
+			    window.console.log(message);
+			  }
+			};
 
- // 	return response['token']
- // }
+			var pusher = new Pusher('dba43bd1700e4756c600');
+			self.channel = pusher.subscribe('private-test_channel');
+			self.channel.bind('pusher:subscription_succeeded', function() {
+				self.pusherInitialized = true;
 
-  // onOpened = function() {
-  //   sendMessage('/opened');
-  // };
+				setPushStatus('Connected with no clients', 'ok');
+				self.channel.trigger('client-whois_event', { });
+			});
 
-  // openChannel = function() {
-  //   var token = getToken();
-  //   var channel = new goog.appengine.Channel(token);
-  //   var handler = {
-  //     'onopen': onOpened,
-  //     'onmessage': onMessage,
-  //     'onerror': function() {},
-  //     'onclose': function() {}
-  //   };
-  //   var socket = channel.open(handler);
-  //   socket.onopen = onOpened;
-  //   socket.onmessage = onMessage;
-  // }
+			self.channel.bind('pusher:subscription_error', function(status) {
+				self.pusherInitialized = false;
 
-  // initialize = function() {
-  //   openChannel();       
-  // }      
+				setPushStatus('Error', 'error', status);
+			});
 
-  // setTimeout(initialize, 100);		
-});
 
-</script>
+			self.channel.bind('client-heartbeat_event', function(data) {
+				if (data['msg'] == 'ON') {
+					setPushStatus('Client connected', 'ok', data['iface'] + ': ' + data['ip']);
+				}
+			});
 
-</body>
-</html>
+		}();
+
+		function sendMessage(opt_param) {
+			if (self.pusherInitialized == true) {
+				self.channel.trigger('client-direction_event', { 'msg': opt_param });
+			}
+		};
+	});
+
+	</script>
+
+	</body>
+	</html>

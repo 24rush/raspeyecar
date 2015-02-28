@@ -1,74 +1,48 @@
+import os
+
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
+from google.appengine.ext.webapp import template
 from google.appengine.api import channel
-from google.appengine.ext import db
 
 import datetime
 
-class Token(db.Model):
-    id = db.StringProperty(required=True)
-    created = db.StringProperty(required=True)
+import pusher
+import json
+
+from credentials import app_id, key, secret
+
+class MainHandler(webapp.RequestHandler):
+  def get (self, q):
+    if q is None:
+      q = 'index.html'
+
+    path = os.path.join (os.path.dirname (__file__), q)
+    self.response.headers ['Content-Type'] = 'text/html'
+    self.response.out.write (template.render (path, {}))
 
 class ChannelHandler(webapp.RequestHandler):
+    def post(self):
+        channel_name = self.request.get('channel_name')
+        socket_id = self.request.get('socket_id')
 
-    token = {}
-    age = 0
+        p = pusher.Pusher(app_id=app_id, key=key, secret=secret)
 
-    def getTokenAgeMinutes(self, created):        
-        return (datetime.datetime.utcnow() - created).days * 24 * 60 + (datetime.datetime.utcnow() - created).seconds // 60
+        auth = p[channel_name].authenticate(socket_id)
+        json_data = json.dumps(auth)
 
-    def fetchToken(self):
-        tokens = db.GqlQuery("SELECT * FROM Token")
+        self.response.out.write(json_data)
 
-        found = False
-        token = {}
-        for t in tokens:
-            found = True
-            token = t
-            break
+    def get (self, q):
+        if q is None or q == '':
+            q = 'index.html'
 
-        if found:
-            self.age = self.getTokenAgeMinutes(datetime.datetime.strptime(token.created, "%Y-%m-%d %H:%M:%S.%f"))
+        path = os.path.join (os.path.dirname (__file__), q)
+        print path
+        self.response.headers ['Content-Type'] = 'text/html'
+        self.response.out.write (template.render (path, {}))
 
-            if self.age >= 120:
-                token.id = channel.create_channel('anon')
-                token.created = str(datetime.datetime.utcnow())                
-                token.put()
-                self.age = 0
-        else:
-            token = Token(id = channel.create_channel('anon'), created = str(datetime.datetime.utcnow()))
-            token.put()
-            self.age = 0
-
-        self.token = token
-
-    def options(self):
-        self.response.headers.add_header("Access-Control-Allow-Origin", "http://localhost:12080")
-
-    def get(self):                                                
-        self.fetchToken()
-
-        data = {}
-        data['token'] = self.token.id
-        data['age'] = self.age
-        data['created'] = self.token.created
-
-        self.response.headers.add_header("Content-Type", "application/json; charset=utf-8")        
-        self.response.headers.add_header("Access-Control-Allow-Origin", "http://localhost:12080")
-        self.response.out.write(str(data))
-
-    def post(self):                
-        msg = self.request.headers["X-Car-Message"]        
-        self.response.headers.add_header("Access-Control-Allow-Origin", "http://localhost:12080")
-        self.response.headers.add_header("Access-Control-Allow-Origin", "http://raspeyecar.appspot.com")
-        
-        if msg is None:
-            self.response.error(400)
-            self.response.out.write('X-Car-Message header is missing')
-        else:            
-            channel.send_message('anon', msg)
-		
-application = webapp.WSGIApplication([('/', ChannelHandler)],
+application = webapp.WSGIApplication([('/pusher/auth', ChannelHandler), ('/(.*html)?', MainHandler)],
                                      debug=True)
 
 def main():
